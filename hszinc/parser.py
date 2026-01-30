@@ -5,8 +5,14 @@
 #
 # vim: set ts=4 sts=4 et tw=78 sw=4 si:
 
-from .zincparser import parse_grid as parse_zinc_grid, \
-    parse_scalar as parse_zinc_scalar
+from .fast_zincparser import (
+    parse_grid as parse_zinc_grid_fast,
+    parse_scalar as parse_zinc_scalar_fast,
+)
+from .zincparser import (
+    parse_grid as parse_zinc_grid_slow,
+    parse_scalar as parse_zinc_scalar_slow,
+)
 from .jsonparser import parse_grid as parse_json_grid, \
     parse_scalar as parse_json_scalar
 import re
@@ -97,7 +103,11 @@ def parse_grid(grid_str, mode=MODE_ZINC, charset='utf-8'):
         grid_str = grid_str.decode(encoding=charset)
 
     if mode == MODE_ZINC:
-        return parse_zinc_grid(grid_str)
+        # Try fast parser first, fall back to slow if needed
+        try:
+            return parse_zinc_grid_fast(grid_str)
+        except Exception:
+            return parse_zinc_grid_slow(grid_str)
     elif mode == MODE_JSON:
         return parse_json_grid(grid_str)
     else:  # pragma: no cover
@@ -117,7 +127,11 @@ def parse_scalar(scalar, mode=MODE_ZINC, version=LATEST_VER, charset='utf-8'):
         scalar = scalar.decode(encoding=charset)
 
     if mode == MODE_ZINC:
-        return parse_zinc_scalar(scalar, version=version)
+        # Try fast parser first, fall back to slow if needed
+        try:
+            return parse_zinc_scalar_fast(scalar, version=version)
+        except Exception:
+            return parse_zinc_scalar_slow(scalar, version=version)
     elif mode == MODE_JSON:
         return parse_json_scalar(scalar, version=version)
     else:  # pragma: no cover
